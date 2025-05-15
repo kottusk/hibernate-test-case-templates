@@ -22,18 +22,18 @@
                  https://github.com/hibernate/hibernate-orm:
                  $ ./docker_db.sh oracle
              -->
-            <property name="hibernate.connection.url" value="jdbc:oracle:thin:@localhost:1521:FREE"/>
-            <property name="hibernate.connection.username" value="SYSTEM"/>
-            <property name="hibernate.connection.password" value="Oracle18"/>
+            <property name="hibernate.connection.url" value="jdbc:oracle:thin:@//ora19.testenv.io:1521/orclpdb"/>
+            <property name="hibernate.connection.username" value="oraConsolUserTester"/>
+            <property name="hibernate.connection.password" value="tester"/>
 
             <!-- Don't allow DB access outside of application context -->
-            <property name="hibernate.boot.allow_jdbc_metadata_access" value="false"/>
+            <property name="hibernate.boot.allow_jdbc_metadata_access" value="true"/>
 
             <property name="hibernate.connection.pool_size" value="5"/>
 
             <property name="hibernate.show_sql" value="true"/>
             <property name="hibernate.format_sql" value="true"/>
-            <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+            <property name="hibernate.hbm2ddl.auto" value="create"/>
 
             <property name="hibernate.max_fetch_depth" value="5"/>
 

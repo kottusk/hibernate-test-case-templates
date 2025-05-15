@@ -3,7 +3,10 @@ package org.hibernate.bugs;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
+
+import java.io.InputStream;
 import java.sql.Blob;
+import java.sql.SQLException;
 
 @Entity
 public class TestEntity {
@@ -22,8 +25,12 @@ public class TestEntity {
     this.id = id;
   }
 
-  public Blob getData() {
-    return data;
+  public InputStream getInputStream() {
+    try {
+      return data.getBinaryStream();
+    } catch (SQLException e) {
+      throw new IllegalArgumentException("Could not obtain requested input stream", e);
+    }
   }
 
   public void setData(Blob data) {

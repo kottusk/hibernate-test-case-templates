@@ -3,8 +3,15 @@ package org.hibernate.bugs;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
-import java.io.ByteArrayInputStream;
-import org.hibernate.engine.jdbc.BlobProxy;
+
+import java.io.*;
+import java.sql.Blob;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import org.hibernate.engine.jdbc.NonContextualLobCreator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,32 +34,49 @@ class JPAUnitTestCase {
     entityManagerFactory.close();
   }
 
-  // Entities are auto-discovered, so just add them anywhere on class-path
-  // Add your tests, using standard JUnit.
+
   @Test
   void hibernate_blob_streaming() throws Exception {
     EntityManager entityManager = entityManagerFactory.createEntityManager();
-    entityManager.getTransaction().begin();
 
     // TEST CASE BEGIN
 
-    // Not only does this test case fail, but also it reads the whole stream into memory.
-    // See org.hibernate.type.descriptor.java.BlobJavaType.getOrCreateBlob
 
-    // This is an in-memory stream, but it will be a stream from a large file in real-world scenario,
-    // which must not be loaded into memory at once.
-    ByteArrayInputStream in = new ByteArrayInputStream(new byte[]{1, 2, 3});
-    long size = in.available();
+    String zipFilePath = "src/test/resources/test.zip";
+    try {
 
-    TestEntity e = new TestEntity();
-    e.setId(1L);
-    e.setData(BlobProxy.generateProxy(in, size));
+      File file = new File(zipFilePath);
 
-    entityManager.persist(e);
+
+      JarFile jarFile = new JarFile(file);
+
+      System.out.println("Open file: " + jarFile.getName());
+      JarEntry entry = jarFile.getJarEntry("pizza.png");
+      long size = entry.getSize();
+      InputStream is = jarFile.getInputStream(entry);
+
+
+      Blob blob = NonContextualLobCreator.INSTANCE.wrap(
+              NonContextualLobCreator.INSTANCE.createBlob(is, size)
+      );
+      TestEntity e = new TestEntity();
+      e.setId(1L);
+      e.setData(blob);
+
+      Session session = entityManager.unwrap(Session.class);
+      Transaction transaction = session.beginTransaction();
+      session.save(e);
+      transaction.commit();
+
+      entityManager.close();
+
+      jarFile.close();
+    } catch (IOException e) {
+      System.err.println("ERROR ZIP: " + e.getMessage() + e.toString());
+      entityManager.close();
+    }
+
 
     // TEST CASE END
-
-    entityManager.getTransaction().commit();
-    entityManager.close();
   }
 }
